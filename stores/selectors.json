@@ -1,0 +1,133 @@
+{
+  "stores": {
+    "falabella": {
+      "name": "Falabella",
+      "domain": "falabella.com.co",
+      "color": "#4A90D9",
+      "searchUrl": "https://www.falabella.com.co/falabella-co/search?Ntt={query}",
+      "urlPatterns": [
+        "falabella\\.com\\.co/falabella-co/product/",
+        "falabella\\.com\\.co/falabella-co/p/"
+      ],
+      "selectors": {
+        "price": [
+          "[data-internet-price]",
+          ".product-price .copy10",
+          ".jsx-price-display",
+          "[class*='price-display']",
+          "[itemprop='price']"
+        ],
+        "name": [
+          "h1.product-name",
+          "h1[class*='product-title']",
+          "h1[class*='ProductTitle']",
+          "[data-product-name]",
+          "h1"
+        ],
+        "image": [
+          "meta[property='og:image']",
+          ".product-image img",
+          "[class*='product-image'] img"
+        ],
+        "sku": [
+          "meta[property='product:retailer_item_id']",
+          "[data-product-id]",
+          "[data-sku]"
+        ],
+        "jsonLd": "script[type='application/ld+json']",
+        "searchResult": {
+          "productCard": "[class*='product-card'], [class*='ProductCard'], .pod-subPod",
+          "productLink": "a[href*='/product/'], a[href*='/p/']",
+          "productName": "[class*='product-display-name'], [class*='pod-displayName']",
+          "productPrice": "[class*='price'], [data-internet-price]"
+        }
+      }
+    },
+    "alkosto": {
+      "name": "Alkosto",
+      "domain": "alkosto.com",
+      "color": "#E84040",
+      "searchUrl": "https://www.alkosto.com/search?text={query}",
+      "urlPatterns": [
+        "alkosto\\.com/[^/]+/p$",
+        "alkosto\\.com/[^/]+\\?sku="
+      ],
+      "selectors": {
+        "price": [
+          ".price__offer--price",
+          ".js-price-display",
+          "[class*='price-offer']",
+          "[class*=' price__offer']",
+          "span.andes-money-amount__fraction",
+          "[itemprop='price']"
+        ],
+        "name": [
+          "h1.product__title",
+          "h1[class*='product-title']",
+          "h1[class*='ProductTitle']",
+          "h1"
+        ],
+        "image": [
+          "meta[property='og:image']",
+          ".product-images img",
+          "#product-image img"
+        ],
+        "sku": [
+          "meta[property='product:retailer_item_id']",
+          "[data-product-sku]",
+          "[data-itemid]"
+        ],
+        "jsonLd": "script[type='application/ld+json']",
+        "searchResult": {
+          "productCard": ".product-item, [class*='product-item'], .ais-Hits-item",
+          "productLink": "a.product-item__image-link, a[href*='/p']",
+          "productName": ".product-item__title, [class*='product-name']",
+          "productPrice": ".price__offer--price, [class*='price']"
+        }
+      }
+    },
+    "exito": {
+      "name": "Almacenes Éxito",
+      "domain": "exito.com",
+      "color": "#F5A623",
+      "searchUrl": "https://www.exito.com/search?text={query}",
+      "urlPatterns": [
+        "exito\\.com/[^/]+/p$",
+        "exito\\.com/producto/[^/]+"
+      ],
+      "selectors": {
+        "price": [
+          ".exito-vtexextension-1-x-sellingPriceValue",
+          "[class*='sellingPriceValue']",
+          "[class*='selling-price']",
+          "span.andes-money-amount__fraction",
+          "[itemprop='price']",
+          "[data-testid='price-value']"
+        ],
+        "name": [
+          "h1[class*='product-name']",
+          "h1[class*='productName']",
+          "h1[class*='ProductTitle']",
+          "h1"
+        ],
+        "image": [
+          "meta[property='og:image']",
+          ".vtex-store-components-3-x-productImageTag",
+          "[class*='productImage'] img"
+        ],
+        "sku": [
+          "meta[property='product:retailer_item_id']",
+          "[data-product-reference]",
+          "[data-sku]"
+        ],
+        "jsonLd": "script[type='application/ld+json']",
+        "searchResult": {
+          "productCard": "[class*='product-summary'], [class*='ProductCard'], .vtex-search-result-3-x-galleryItem",
+          "productLink": "a[href*='/p']",
+          "productName": "[class*='product-summary-name'], [class*='productName']",
+          "productPrice": "[class*='sellingPriceValue'], [class*='selling-price']"
+        }
+      }
+    }
+  }
+}

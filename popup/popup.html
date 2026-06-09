@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CompareAll — Mejor Precio</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- ══ HEADER ══════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-10 2a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="brand-name">CompareAll</span>
+    </div>
+    <div class="header-actions">
+      <button id="btn-refresh" class="icon-btn" title="Actualizar precios ahora">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="btn-options" class="icon-btn" title="Configuración">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ PROFILE SELECTOR ═══════════════════════════ -->
+  <div class="profile-bar">
+    <label class="profile-label">Perfil:</label>
+    <select id="profile-select" class="profile-select"></select>
+    <span id="product-count" class="product-count"></span>
+  </div>
+
+  <!-- ══ TABS ════════════════════════════════════════ -->
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="prices" role="tab">💰 Precios</button>
+    <button class="tab" data-tab="history" role="tab">📈 Historial</button>
+    <button class="tab" data-tab="add" role="tab">➕ Agregar</button>
+  </nav>
+
+  <!-- ══ TAB: PRICES ════════════════════════════════ -->
+  <section id="tab-prices" class="tab-content active">
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">🛍️</div>
+      <p>No tienes productos rastreados.</p>
+      <p class="empty-hint">Navega a una página de producto en Falabella, Alkosto o Éxito y se agregará automáticamente.</p>
+    </div>
+    <ul id="product-list" class="product-list"></ul>
+  </section>
+
+  <!-- ══ TAB: HISTORY ═══════════════════════════════ -->
+  <section id="tab-history" class="tab-content">
+    <div id="history-empty" class="empty-state">
+      <p>Selecciona un producto para ver su historial.</p>
+    </div>
+    <div id="history-panel" class="hidden">
+      <div class="history-header">
+        <div class="history-title-row">
+          <button id="history-back" class="back-btn">← Volver</button>
+          <h3 id="history-product-name" class="history-product-name"></h3>
+        </div>
+        <div class="range-buttons">
+          <button class="range-btn active" data-days="7">7d</button>
+          <button class="range-btn" data-days="30">30d</button>
+          <button class="range-btn" data-days="90">3m</button>
+          <button class="range-btn" data-days="180">6m</button>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="price-chart"></canvas>
+      </div>
+      <div id="price-stats" class="price-stats"></div>
+    </div>
+  </section>
+
+  <!-- ══ TAB: ADD ═══════════════════════════════════ -->
+  <section id="tab-add" class="tab-content">
+    <div id="current-page-product" class="current-page-card hidden">
+      <h3 class="add-section-title">Producto detectado en esta página</h3>
+      <div class="detected-product">
+        <img id="detected-image" src="" alt="" class="detected-img">
+        <div class="detected-info">
+          <p id="detected-name" class="detected-name"></p>
+          <p id="detected-price" class="detected-price"></p>
+          <p id="detected-store" class="detected-store-badge"></p>
+        </div>
+      </div>
+      <button id="btn-add-detected" class="btn-primary">Agregar a mi lista</button>
+    </div>
+
+    <div class="manual-add-section">
+      <h3 class="add-section-title">Agregar manualmente por URL</h3>
+      <div class="input-group">
+        <input id="manual-url" type="url" placeholder="https://www.falabella.com.co/..." class="url-input">
+        <button id="btn-add-manual" class="btn-secondary">Buscar</button>
+      </div>
+      <p id="manual-status" class="manual-status"></p>
+    </div>
+  </section>
+
+  <!-- ══ NOTIFICATION ═══════════════════════════════ -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="../lib/chart.min.js"></script>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

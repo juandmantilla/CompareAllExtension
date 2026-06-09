@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CompareAll — Configuración</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-10 2a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>CompareAll</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-section="products">
+        <span class="nav-icon">📦</span> Mis Productos
+      </button>
+      <button class="nav-item" data-section="profiles">
+        <span class="nav-icon">👤</span> Perfiles
+      </button>
+      <button class="nav-item" data-section="settings">
+        <span class="nav-icon">⚙️</span> Configuración
+      </button>
+      <button class="nav-item" data-section="data">
+        <span class="nav-icon">💾</span> Datos
+      </button>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- ══ PRODUCTS ═══════════════════════════════════ -->
+    <section id="section-products" class="section active">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Mis Productos</h1>
+          <p class="section-subtitle">Todos los productos rastreados en tus perfiles.</p>
+        </div>
+        <div class="header-filters">
+          <select id="filter-profile" class="filter-select">
+            <option value="">Todos los perfiles</option>
+          </select>
+          <select id="filter-store" class="filter-select">
+            <option value="">Todas las tiendas</option>
+            <option value="falabella">Falabella</option>
+            <option value="alkosto">Alkosto</option>
+            <option value="exito">Éxito</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="products-empty" class="empty-state">
+        <div class="empty-icon">🛍️</div>
+        <p>No tienes productos rastreados aún.</p>
+        <p class="empty-hint">Navega a una página de producto en Falabella, Alkosto o Éxito para comenzar.</p>
+      </div>
+
+      <div id="products-table-wrap" class="table-wrap hidden">
+        <table class="data-table" id="products-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Tiendas</th>
+              <th>Mejor Precio</th>
+              <th>Perfil</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ══ PROFILES ════════════════════════════════════ -->
+    <section id="section-profiles" class="section">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Perfiles</h1>
+          <p class="section-subtitle">Organiza tus búsquedas en perfiles separados.</p>
+        </div>
+        <button id="btn-new-profile" class="btn-primary">+ Nuevo Perfil</button>
+      </div>
+
+      <div id="profiles-list" class="profiles-grid"></div>
+    </section>
+
+    <!-- ══ SETTINGS ════════════════════════════════════ -->
+    <section id="section-settings" class="section">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Configuración General</h1>
+          <p class="section-subtitle">Ajusta el comportamiento de la extensión.</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="setting-card">
+          <h3 class="setting-title">⏱ Frecuencia de Actualización</h3>
+          <p class="setting-desc">Con qué frecuencia se actualizan los precios en segundo plano.</p>
+          <select id="setting-interval" class="filter-select">
+            <option value="6">Cada 6 horas</option>
+            <option value="12">Cada 12 horas</option>
+            <option value="24">Una vez al día</option>
+          </select>
+          <button id="btn-save-interval" class="btn-secondary mt-8">Guardar</button>
+        </div>
+
+        <div class="setting-card">
+          <h3 class="setting-title">🔔 Notificaciones</h3>
+          <p class="setting-desc">Recibe alertas cuando un precio baje significativamente.</p>
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-notifications" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            Activar notificaciones
+          </label>
+        </div>
+
+        <div class="setting-card">
+          <h3 class="setting-title">🔍 Búsqueda Automática</h3>
+          <p class="setting-desc">Buscar automáticamente el producto en otras tiendas cuando se detecta uno nuevo.</p>
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-auto-search" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            Búsqueda automática activa
+          </label>
+        </div>
+
+        <div class="setting-card">
+          <h3 class="setting-title">🗑 Limpiar Historial</h3>
+          <p class="setting-desc">Elimina todo el historial de precios (los productos se mantienen).</p>
+          <button id="btn-clear-history" class="btn-danger">Limpiar historial</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ DATA ═════════════════════════════════════════ -->
+    <section id="section-data" class="section">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Importar / Exportar</h1>
+          <p class="section-subtitle">Haz una copia de seguridad o migra tus datos.</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="setting-card">
+          <h3 class="setting-title">📤 Exportar Datos</h3>
+          <p class="setting-desc">Descarga todos tus perfiles, productos e historial como archivo JSON.</p>
+          <button id="btn-export" class="btn-primary">Exportar JSON</button>
+        </div>
+
+        <div class="setting-card">
+          <h3 class="setting-title">📥 Importar Datos</h3>
+          <p class="setting-desc">Restaura datos desde un archivo JSON exportado previamente.</p>
+          <input type="file" id="import-file" accept=".json" class="file-input">
+          <button id="btn-import" class="btn-secondary">Seleccionar archivo</button>
+          <p id="import-status" class="status-msg"></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══ MODALS ══════════════════════════════════════ -->
+
+  <!-- Profile Modal -->
+  <div id="modal-profile" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 class="modal-title" id="modal-profile-title">Nuevo Perfil</h2>
+      <div class="form-group">
+        <label class="form-label">Nombre del Perfil</label>
+        <input id="profile-name-input" type="text" class="form-input" placeholder="Ej: Tecnología Casa">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Alerta cuando el precio baje (% mínimo)</label>
+        <input id="profile-threshold-input" type="number" class="form-input" value="10" min="1" max="90">
+      </div>
+      <div class="modal-actions">
+        <button id="modal-profile-cancel" class="btn-ghost">Cancelar</button>
+        <button id="modal-profile-save" class="btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Edit Modal -->
+  <div id="modal-product" class="modal-overlay hidden">
+    <div class="modal modal-lg">
+      <h2 class="modal-title">Editar Producto</h2>
+      <input type="hidden" id="edit-product-id">
+      <div class="form-group">
+        <label class="form-label">Nombre</label>
+        <input id="edit-product-name" type="text" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL en Falabella</label>
+        <input id="edit-url-falabella" type="url" class="form-input" placeholder="https://www.falabella.com.co/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL en Alkosto</label>
+        <input id="edit-url-alkosto" type="url" class="form-input" placeholder="https://www.alkosto.com/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL en Almacenes Éxito</label>
+        <input id="edit-url-exito" type="url" class="form-input" placeholder="https://www.exito.com/...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mover a Perfil</label>
+        <select id="edit-product-profile" class="form-input"></select>
+      </div>
+      <div class="modal-actions">
+        <button id="modal-product-cancel" class="btn-ghost">Cancelar</button>
+        <button id="modal-product-save" class="btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>
