@@ -41,6 +41,32 @@
   --popup-width: 420px;
 }
 
+[data-theme="light"] {
+  --bg-base:        #f3f4f6;
+  --bg-surface:     #ffffff;
+  --bg-card:        #ffffff;
+  --bg-card-hover:  #f8fafc;
+  --border:         rgba(0,0,0,0.08);
+  --border-focus:   rgba(102,126,234,0.5);
+
+  --text-primary:   #1e293b;
+  --text-secondary: #64748b;
+  --text-muted:     #94a3b8;
+
+  --shadow-card:    0 4px 15px rgba(0,0,0,0.05);
+  --shadow-glow:    0 0 20px rgba(102,126,234,0.15);
+}
+
+[data-theme="light"] .app-header {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .product-thumb,
+[data-theme="light"] .product-thumb-placeholder,
+[data-theme="light"] .detected-img {
+  background: #f1f5f9;
+}
+
 * {
   margin: 0;
   padding: 0;

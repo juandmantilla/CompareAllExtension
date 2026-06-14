@@ -23,6 +23,11 @@ let currentPageData = null; // Data captured from active tab
 // ─────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
+  const { theme } = await chrome.storage.local.get({ theme: 'dark' });
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+
   await initProfileSelector();
   await renderProductList();
   await detectCurrentPage();

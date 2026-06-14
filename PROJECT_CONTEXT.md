@@ -154,6 +154,7 @@ popup.js / options.js leen IndexedDB directamente
 | 2 | **Búsqueda cross-store automática** por nombre de producto. Fallback a vinculación manual si la búsqueda no es confiable (similitud < 70%). |
 | 3 | **Sin backend:** Todo el almacenamiento es local (IndexedDB). No se envían datos a servidores externos. |
 | 4 | **Selectores configurables:** `stores/selectors.json` permite actualizar selectores DOM sin modificar código JS cuando las tiendas cambien su frontend. |
+| 5 | **Temas Personalizables:** Soporte nativo para Modo Oscuro (por defecto) y Modo Claro, configurable desde las Opciones. |
 
 ---
 

@@ -21,6 +21,11 @@ La extensión guarda el historial de precios hasta por 6 meses de manera 100% lo
 3. Navega hasta la carpeta `CompareAllExtension` y selecciona el archivo `manifest.json`.
 4. La extensión quedará instalada temporalmente (deberás repetir este paso si cierras por completo el navegador, a menos que la empaquetes).
 
+### 🔄 Cómo Actualizar la Extensión
+Si hiciste cambios en el código (por ejemplo, actualizando los scripts o añadiendo nuevas tiendas), debes decirle al navegador que recargue la extensión para que los cambios surtan efecto:
+- **Chromium (Chrome, Edge, etc.):** Ve a `chrome://extensions`, busca la tarjeta de CompareAll y haz clic en el ícono de recarga (una flecha circular).
+- **Firefox:** Ve a `about:debugging#/runtime/this-firefox`, busca CompareAll y haz clic en el botón **"Recargar"** (Reload).
+
 ---
 
 ## 👤 Añadir y Guardar Perfiles
@@ -69,6 +74,17 @@ El historial de precios es uno de los mayores beneficios de CompareAll, permiti�
    - **Líneas de colores:** Cada tienda tiene un color asignado (Falabella en azul, Alkosto en rojo, Éxito en naranja, MercadoLibre en amarillo).
    - **Rango de tiempo:** En la parte inferior, puedes seleccionar visualizar los últimos `7 Días`, `30 Días` o `6 Meses`.
    - **Estadísticas:** Debajo de la gráfica verás el precio mínimo, máximo y el promedio histórico del artículo en cada tienda.
+
+---
+
+## 🎨 Apariencia y Modo Claro
+
+La extensión utiliza un "Modo Oscuro" (Dark Mode) con estética *glassmorphism* por defecto, pero puedes cambiarlo al "Modo Claro" (Light Mode) en cualquier momento:
+
+1. Abre las **Opciones** de la extensión.
+2. Ve a la sección de **"⚙️ Configuración"**.
+3. En la tarjeta **"🎨 Apariencia"**, selecciona **Modo Claro** en el menú desplegable.
+4. Toda la interfaz (tanto la ventana de Opciones como el Popup principal) cambiará instantáneamente a colores claros. El navegador recordará tu preferencia.
 
 ---
 

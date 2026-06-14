@@ -257,12 +257,21 @@ function closeProductModal() {
 // ─────────────────────────────────────────────
 
 async function loadSettings() {
-  const { refreshInterval, notificationsEnabled, autoSearchEnabled } = await chrome.storage.local.get({
+  const { refreshInterval, notificationsEnabled, autoSearchEnabled, theme } = await chrome.storage.local.get({
     refreshInterval: 6,
     notificationsEnabled: true,
-    autoSearchEnabled: true
+    autoSearchEnabled: true,
+    theme: 'dark'
   });
 
+  // Apply theme to current page
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+
+  document.getElementById('setting-theme').value = theme;
   document.getElementById('setting-interval').value = refreshInterval;
   document.getElementById('setting-notifications').checked = notificationsEnabled;
   document.getElementById('setting-auto-search').checked = autoSearchEnabled;
@@ -333,6 +342,18 @@ function initEventListeners() {
     await loadAll();
     renderProductsSection();
     showToast('Producto actualizado');
+  });
+
+  // Settings: theme
+  document.getElementById('setting-theme').addEventListener('change', async (e) => {
+    const theme = e.target.value;
+    await chrome.storage.local.set({ theme });
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    showToast('Apariencia guardada');
   });
 
   // Settings: interval
