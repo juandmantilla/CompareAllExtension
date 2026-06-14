@@ -23,6 +23,7 @@ Extensión de navegador (Chromium / Firefox, Manifest V3) que:
 | Falabella | falabella.com.co | `#4A90D9` (azul) |
 | Alkosto | alkosto.com | `#E84040` (rojo) |
 | Almacenes Éxito | exito.com | `#F5A623` (naranja) |
+| MercadoLibre | mercadolibre.com.co | `#FFF159` (amarillo) |
 
 ---
 
@@ -51,7 +52,8 @@ CompareAllExtension/
 │   ├── utils.js                ← Helpers compartidos (extracción de precio, formato COP)
 │   ├── falabella.js            ← Extractor para falabella.com.co
 │   ├── alkosto.js              ← Extractor para alkosto.com
-│   └── exito.js                ← Extractor para exito.com
+│   ├── exito.js                ← Extractor para exito.com
+│   └── mercadolibre.js         ← Extractor para mercadolibre.com.co
 ├── popup/
 │   ├── popup.html              ← UI del popup (420px wide)
 │   ├── popup.js                ← Lógica del popup (Chart.js, perfiles, mejor precio)
@@ -104,7 +106,7 @@ popup.js / options.js leen IndexedDB directamente
 | Object Store | Key Path | Descripción |
 |---|---|---|
 | `profiles` | `id` (auto) | `{ id, name, productIds[], alertThreshold, createdAt }` |
-| `products` | `id` (auto) | `{ id, name, image, profileId, storeUrls: {falabella, alkosto, exito}, sku, addedAt }` |
+| `products` | `id` (auto) | `{ id, name, image, profileId, storeUrls: {falabella, alkosto, exito, mercadolibre}, sku, addedAt }` |
 | `price_history` | `id` (auto) | `{ id, productId, store, price, timestamp }` — purga entradas > 6 meses |
 
 ---
@@ -124,6 +126,7 @@ popup.js / options.js leen IndexedDB directamente
 - Falabella: `https://www.falabella.com.co/falabella-co/search?Ntt={query}`
 - Alkosto: `https://www.alkosto.com/search?text={query}`
 - Éxito: `https://www.exito.com/search?text={query}`
+- MercadoLibre: `https://listado.mercadolibre.com.co/{query}`
 
 ---
 

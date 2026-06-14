@@ -32,7 +32,7 @@
 
 function isProductPage() {
   const url = window.location.href;
-  return /exito\.com\/[^/]+\/p(\?|$)/.test(url) ||
+  return /exito\.com\/.*\/p(\/|\?|$)/.test(url) ||
          /exito\.com\/producto\/[^/]+/.test(url);
 }
 

@@ -223,7 +223,7 @@ async function checkPriceAlert(productId, store, currentPrice) {
     const dropPercent = ((oldPrice - currentPrice) / oldPrice) * 100;
 
     if (dropPercent >= profile.alertThreshold) {
-      const storeNames = { falabella: 'Falabella', alkosto: 'Alkosto', exito: 'Éxito' };
+      const storeNames = { falabella: 'Falabella', alkosto: 'Alkosto', exito: 'Éxito', mercadolibre: 'MercadoLibre' };
       chrome.notifications.create(`price_drop_${productId}_${store}`, {
         type: 'basic',
         iconUrl: chrome.runtime.getURL('icons/icon48.png'),

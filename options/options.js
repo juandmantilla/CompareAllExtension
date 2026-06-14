@@ -7,7 +7,8 @@ import * as DB from '../lib/db.js';
 const STORE_META = {
   falabella: { name: 'Falabella', color: '#4A90D9' },
   alkosto:   { name: 'Alkosto',   color: '#E84040' },
-  exito:     { name: 'Éxito',     color: '#F5A623' }
+  exito:     { name: 'Éxito',     color: '#F5A623' },
+  mercadolibre: { name: 'MercadoLibre', color: '#FFF159' }
 };
 
 let allProfiles = [];
@@ -235,6 +236,9 @@ function openProductModal(productId) {
   document.getElementById('edit-url-falabella').value = product.storeUrls?.falabella || '';
   document.getElementById('edit-url-alkosto').value   = product.storeUrls?.alkosto   || '';
   document.getElementById('edit-url-exito').value     = product.storeUrls?.exito     || '';
+  
+  const mlInput = document.getElementById('edit-url-mercadolibre');
+  if (mlInput) mlInput.value = product.storeUrls?.mercadolibre || '';
 
   const profileSelect = document.getElementById('edit-product-profile');
   profileSelect.innerHTML = allProfiles.map(p =>
@@ -305,12 +309,14 @@ function initEventListeners() {
       storeUrls: {
         falabella: document.getElementById('edit-url-falabella').value.trim() || undefined,
         alkosto:   document.getElementById('edit-url-alkosto').value.trim() || undefined,
-        exito:     document.getElementById('edit-url-exito').value.trim() || undefined
+        exito:     document.getElementById('edit-url-exito').value.trim() || undefined,
+        mercadolibre: document.getElementById('edit-url-mercadolibre') ? document.getElementById('edit-url-mercadolibre').value.trim() || undefined : undefined
       },
       storeStatuses: {
         falabella: document.getElementById('edit-url-falabella').value.trim() ? 'found' : undefined,
         alkosto:   document.getElementById('edit-url-alkosto').value.trim()   ? 'found' : undefined,
         exito:     document.getElementById('edit-url-exito').value.trim()     ? 'found' : undefined,
+        mercadolibre: document.getElementById('edit-url-mercadolibre') && document.getElementById('edit-url-mercadolibre').value.trim() ? 'found' : undefined
       }
     };
 

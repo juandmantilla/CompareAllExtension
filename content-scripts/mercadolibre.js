@@ -1,5 +1,5 @@
 /**
- * alkosto.js — Content script for alkosto.com
+ * mercadolibre.js — Content script for mercadolibre.com.co
  * Detects product pages and extracts price, name, image, and SKU.
  */
 
@@ -9,19 +9,20 @@
 
   if (!isProductPage()) return;
 
-  // Alkosto uses VTEX/custom React — wait for price to render
-  await waitForPrice();
+  // Wait for dynamic content to load
+  await new Promise(r => setTimeout(r, 1500));
 
   const data = extractProductData();
   if (!data || !data.price) {
-    console.warn('[CompareAll Alkosto] Could not extract product data.');
+    console.warn('[CompareAll MercadoLibre] Could not extract product data.');
     return;
   }
 
+  // Send to service worker
   utils.injectBadge('saving');
   chrome.runtime.sendMessage({
     action: 'PRICE_CAPTURED',
-    store: 'alkosto',
+    store: 'mercadolibre',
     ...data,
     url: window.location.href
   }, (response) => {
@@ -32,31 +33,13 @@
 
 function isProductPage() {
   const url = window.location.href;
-  return /alkosto\.com\/.*\/p(\/|\?|$)/.test(url) ||
-         /alkosto\.com\/catalogo\/[^/]+/.test(url);
-}
-
-async function waitForPrice() {
-  const selectors = [
-    '.price__offer--price',
-    '.js-price-display',
-    '[class*="price-offer"]',
-    '[itemprop="price"]'
-  ];
-
-  for (const sel of selectors) {
-    const el = await window.CompareAllUtils.waitForElement(sel, 5000);
-    if (el) return el;
-  }
-  // Fallback: just wait fixed time
-  await new Promise(r => setTimeout(r, 2000));
-  return null;
+  return /articulo\.mercadolibre\.com\.co\/MCO-/.test(url);
 }
 
 function extractProductData() {
   const utils = window.CompareAllUtils;
 
-  // Strategy 1: JSON-LD
+  // Strategy 1: JSON-LD structured data (most reliable)
   const ld = utils.extractFromJsonLd();
   if (ld?.price && ld.price > 1000) {
     return {
@@ -67,32 +50,28 @@ function extractProductData() {
     };
   }
 
-  // Strategy 2: Open Graph
+  // Strategy 2: Open Graph meta tags
   const ogPrice = document.querySelector('meta[property="product:price:amount"]')?.content;
   if (ogPrice) {
     const price = parseFloat(ogPrice.replace(/[^\d.]/g, ''));
     if (price > 1000) {
       return {
-        name: document.querySelector('meta[property="og:title"]')?.content,
+        name: document.querySelector('meta[property="og:title"]')?.content || getNameFallback(),
         price,
-        image: document.querySelector('meta[property="og:image"]')?.content,
+        image: document.querySelector('meta[property="og:image"]')?.content || getImageFallback(),
         sku: getSkuFallback()
       };
     }
   }
 
-  // Strategy 3: DOM
+  // Strategy 3: DOM selectors
   const priceSelectors = [
-    '.price__offer--price',
-    '.js-price-display',
-    '[class*="price-offer"]',
-    '[class*="price__offer"]',
-    'span.andes-money-amount__fraction',
+    '.ui-pdp-price__second-line .andes-money-amount__fraction',
     '[itemprop="price"]',
-    '.product-form__price'
+    '.andes-money-amount__fraction'
   ];
 
-  const priceText = utils.getText(priceSelectors) ||
+  const priceText = utils.getText(priceSelectors) || 
                     document.querySelector('[itemprop="price"]')?.getAttribute('content');
   const price = utils.parseCOPPrice(priceText);
 
@@ -106,10 +85,8 @@ function extractProductData() {
 
 function getNameFallback() {
   const selectors = [
-    'h1.product__title',
-    'h1[class*="product-title"]',
-    'h1[class*="ProductTitle"]',
-    '.product-name h1',
+    'h1.ui-pdp-title',
+    '[itemprop="name"]',
     'h1'
   ];
   for (const sel of selectors) {
@@ -121,14 +98,12 @@ function getNameFallback() {
 
 function getImageFallback() {
   return document.querySelector('meta[property="og:image"]')?.content ||
-         document.querySelector('.product-images img, #product-image img')?.src ||
+         document.querySelector('.ui-pdp-gallery__figure img')?.src ||
          null;
 }
 
 function getSkuFallback() {
-  return document.querySelector('[data-product-sku]')?.dataset?.productSku ||
-         document.querySelector('[data-itemid]')?.dataset?.itemid ||
-         new URLSearchParams(window.location.search).get('sku') ||
-         window.location.pathname.split('/').filter(Boolean).slice(-1)[0]?.replace('/p', '') ||
+  return document.querySelector('input[name="item_id"]')?.value ||
+         window.location.pathname.match(/MCO-?\d+/)?.[0]?.replace('-', '') ||
          null;
 }

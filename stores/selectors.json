@@ -49,7 +49,7 @@
       "color": "#E84040",
       "searchUrl": "https://www.alkosto.com/search?text={query}",
       "urlPatterns": [
-        "alkosto\\.com/[^/]+/p$",
+        "alkosto\\.com/.*?/p(/|\\?|$)",
         "alkosto\\.com/[^/]+\\?sku="
       ],
       "selectors": {
@@ -92,7 +92,7 @@
       "color": "#F5A623",
       "searchUrl": "https://www.exito.com/search?text={query}",
       "urlPatterns": [
-        "exito\\.com/[^/]+/p$",
+        "exito\\.com/.*?/p(/|\\?|$)",
         "exito\\.com/producto/[^/]+"
       ],
       "selectors": {
@@ -126,6 +126,39 @@
           "productLink": "a[href*='/p']",
           "productName": "[class*='product-summary-name'], [class*='productName']",
           "productPrice": "[class*='sellingPriceValue'], [class*='selling-price']"
+        }
+      }
+    },
+    "mercadolibre": {
+      "name": "MercadoLibre",
+      "domain": "mercadolibre.com.co",
+      "color": "#FFF159",
+      "searchUrl": "https://listado.mercadolibre.com.co/{query}",
+      "urlPatterns": [
+        "articulo\\.mercadolibre\\.com\\.co/MCO-"
+      ],
+      "selectors": {
+        "price": [
+          ".ui-pdp-price__second-line .andes-money-amount__fraction",
+          "[itemprop='price']"
+        ],
+        "name": [
+          "h1.ui-pdp-title",
+          "[itemprop='name']"
+        ],
+        "image": [
+          ".ui-pdp-gallery__figure img",
+          "meta[property='og:image']"
+        ],
+        "sku": [
+          "input[name='item_id']"
+        ],
+        "jsonLd": "script[type='application/ld+json']",
+        "searchResult": {
+          "productCard": ".ui-search-layout__item",
+          "productLink": "a.ui-search-link",
+          "productName": "h2.ui-search-item__title",
+          "productPrice": ".andes-money-amount__fraction"
         }
       }
     }

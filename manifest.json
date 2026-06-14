@@ -33,7 +33,8 @@
   "host_permissions": [
     "*://*.falabella.com.co/*",
     "*://*.alkosto.com/*",
-    "*://*.exito.com/*"
+    "*://*.exito.com/*",
+    "*://*.mercadolibre.com.co/*"
   ],
   "content_scripts": [
     {
@@ -56,6 +57,13 @@
       ],
       "js": ["content-scripts/utils.js", "content-scripts/exito.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.mercadolibre.com.co/*"
+      ],
+      "js": ["content-scripts/utils.js", "content-scripts/mercadolibre.js"],
+      "run_at": "document_idle"
     }
   ],
   "content_security_policy": {
@@ -67,7 +75,8 @@
       "matches": [
         "*://*.falabella.com.co/*",
         "*://*.alkosto.com/*",
-        "*://*.exito.com/*"
+        "*://*.exito.com/*",
+        "*://*.mercadolibre.com.co/*"
       ]
     }
   ]
