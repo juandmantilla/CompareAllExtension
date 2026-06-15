@@ -1,6 +1,6 @@
 /**
  * exito.js — Content script for exito.com (VTEX platform)
- * Detects product pages and extracts price, name, image, and SKU.
+ * Detects product pages and shows a manual track button.
  */
 
 (async function () {
@@ -18,21 +18,15 @@
     return;
   }
 
-  utils.injectBadge('saving');
-  chrome.runtime.sendMessage({
-    action: 'PRICE_CAPTURED',
-    store: 'exito',
-    ...data,
-    url: window.location.href
-  }, (response) => {
-    if (chrome.runtime.lastError) return;
-    if (response?.success) utils.injectBadge('tracked');
-  });
+  // Inject manual track button (NO automatic tracking)
+  utils.injectTrackButton('exito', data);
 })();
 
 function isProductPage() {
   const url = window.location.href;
-  return /exito\.com\/.*\/p(\/|\?|$)/.test(url) ||
+  // Matches: exito.com/{slug}/p or exito.com/{slug}-{id}/p
+  return /exito\.com\/[^/]+-\d+\/p(\?|#|$)/.test(url) ||
+         /exito\.com\/.*\/p(\/|\?|$)/.test(url) ||
          /exito\.com\/producto\/[^/]+/.test(url);
 }
 
@@ -73,7 +67,7 @@ function extractProductData() {
       return {
         name: document.querySelector('meta[property="og:title"]')?.content,
         price,
-        image: document.querySelector('meta[property="og:image"]')?.content,
+        image: getImageFallback(),
         sku: getSkuFallback()
       };
     }
@@ -118,9 +112,34 @@ function getNameFallback() {
 }
 
 function getImageFallback() {
-  return document.querySelector('meta[property="og:image"]')?.content ||
-         document.querySelector('[class*="productImage"] img, [class*="vtex-store-components"] img')?.src ||
-         null;
+  const utils = window.CompareAllUtils;
+  // Éxito (VTEX) uses React-rendered images — try multiple strategies
+  const strategies = [
+    () => utils.getImageFromElement(document.querySelector('meta[property="og:image"]')),
+    // VTEX product image tag
+    () => utils.getImageFromElement(document.querySelector('.vtex-store-components-3-x-productImageTag')),
+    () => utils.getImageFromElement(document.querySelector('[class*="productImage"] img')),
+    () => utils.getImageFromElement(document.querySelector('[class*="vtex-store-components"] img')),
+    // Try picture/source for responsive images
+    () => utils.getImageFromElement(document.querySelector('[class*="productImage"] picture source')),
+    // Generic fallbacks
+    () => utils.getImageFromElement(document.querySelector('[data-testid*="image"] img')),
+    () => utils.getImageFromElement(document.querySelector('[class*="gallery"] img')),
+    () => {
+      // Try all main content images
+      const imgs = document.querySelectorAll('[class*="productImage"] img, [class*="gallery"] img, [class*="swiper"] img');
+      for (const img of imgs) {
+        const url = utils.getImageFromElement(img);
+        if (url) return url;
+      }
+      return null;
+    }
+  ];
+  for (const strategy of strategies) {
+    const url = strategy();
+    if (url) return url;
+  }
+  return null;
 }
 
 function getSkuFallback() {

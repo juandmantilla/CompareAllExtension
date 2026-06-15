@@ -1,6 +1,6 @@
 /**
  * falabella.js — Content script for falabella.com.co
- * Detects product pages and extracts price, name, image, and SKU.
+ * Detects product pages and shows a manual track button.
  */
 
 (async function () {
@@ -19,17 +19,8 @@
     return;
   }
 
-  // Send to service worker
-  utils.injectBadge('saving');
-  chrome.runtime.sendMessage({
-    action: 'PRICE_CAPTURED',
-    store: 'falabella',
-    ...data,
-    url: window.location.href
-  }, (response) => {
-    if (chrome.runtime.lastError) return;
-    if (response?.success) utils.injectBadge('tracked');
-  });
+  // Inject manual track button (NO automatic tracking)
+  utils.injectTrackButton('falabella', data);
 })();
 
 function isProductPage() {
@@ -102,9 +93,20 @@ function getNameFallback() {
 }
 
 function getImageFallback() {
-  return document.querySelector('meta[property="og:image"]')?.content ||
-         document.querySelector('.product-image img, [class*="product-image"] img')?.src ||
-         null;
+  const utils = window.CompareAllUtils;
+  // Try multiple strategies for image
+  const strategies = [
+    () => utils.getImageFromElement(document.querySelector('meta[property="og:image"]')),
+    () => utils.getImageFromElement(document.querySelector('.product-image img')),
+    () => utils.getImageFromElement(document.querySelector('[class*="product-image"] img')),
+    () => utils.getImageFromElement(document.querySelector('picture source')),
+    () => utils.getImageFromElement(document.querySelector('[class*="gallery"] img')),
+  ];
+  for (const strategy of strategies) {
+    const url = strategy();
+    if (url) return url;
+  }
+  return null;
 }
 
 function getSkuFallback() {

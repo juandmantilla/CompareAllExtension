@@ -135,7 +135,8 @@
       "color": "#FFF159",
       "searchUrl": "https://listado.mercadolibre.com.co/{query}",
       "urlPatterns": [
-        "articulo\\.mercadolibre\\.com\\.co/MCO-"
+        "articulo\\.mercadolibre\\.com\\.co/MCO-",
+        "mercadolibre\\.com\\.co/[^/]+/p/MCO\\d+"
       ],
       "selectors": {
         "price": [

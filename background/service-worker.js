@@ -150,6 +150,19 @@ async function handleMessage(message, sender) {
       return { success: true };
     }
 
+    case 'CHECK_TRACKED': {
+      const { url } = message;
+      if (!url) return { tracked: false };
+      const allProducts = await DB.getAllProducts();
+      const isTracked = allProducts.some(p =>
+        Object.values(p.storeUrls || {}).some(storeUrl =>
+          storeUrl && url.includes(storeUrl.split('?')[0].split('#')[0]) ||
+          storeUrl && storeUrl.includes(url.split('?')[0].split('#')[0])
+        )
+      );
+      return { tracked: isTracked };
+    }
+
     default:
       return { success: false, reason: 'unknown_action' };
   }

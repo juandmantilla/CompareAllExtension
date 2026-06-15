@@ -7,10 +7,10 @@
 ## 🎯 Objetivo
 
 Extensión de navegador (Chromium / Firefox, Manifest V3) que:
-1. **Detecta automáticamente** cuando el usuario navega a una página de producto tecnológico en las tiendas colombianas soportadas.
-2. **Registra el precio** y lo almacena localmente (IndexedDB, sin backend).
+1. **Añade un botón de rastreo manual** cuando el usuario navega a una página de producto tecnológico en las tiendas colombianas soportadas.
+2. **Registra el precio** y lo almacena localmente al añadir el producto (IndexedDB, sin backend).
 3. **Busca automáticamente** el mismo producto por nombre en las otras tiendas (con fallback manual).
-4. **Muestra el historial de precios** de los últimos 6 meses con gráfica (Chart.js).
+4. **Muestra el historial de precios** de hasta 2 años con gráfica (Chart.js).
 5. **Indica el mejor precio actual** y en qué tienda conseguirlo.
 6. Soporta **múltiples perfiles** de usuario para organizar distintas listas de productos.
 
@@ -81,10 +81,11 @@ CompareAllExtension/
 ```
 Usuario navega a página de producto
         ↓
-content-script (falabella/alkosto/exito).js
+content-script (falabella/alkosto/exito/mercadolibre).js
   → Extrae: nombre, precio, imagen, SKU, URL
-  → Inyecta badge "Rastreado ✓" en la página
-  → Envía mensaje al Service Worker
+  → Inyecta botón "Rastrear con CompareAll" en la página
+        ↓
+Usuario hace clic en el botón
         ↓
 service-worker.js recibe { action: 'PRICE_CAPTURED', ... }
   → Guarda en IndexedDB (db.js → price_history)
@@ -107,7 +108,7 @@ popup.js / options.js leen IndexedDB directamente
 |---|---|---|
 | `profiles` | `id` (auto) | `{ id, name, productIds[], alertThreshold, createdAt }` |
 | `products` | `id` (auto) | `{ id, name, image, profileId, storeUrls: {falabella, alkosto, exito, mercadolibre}, sku, addedAt }` |
-| `price_history` | `id` (auto) | `{ id, productId, store, price, timestamp }` — purga entradas > 6 meses |
+| `price_history` | `id` (auto) | `{ id, productId, store, price, timestamp }` — purga entradas > 2 años |
 
 ---
 
@@ -127,6 +128,8 @@ popup.js / options.js leen IndexedDB directamente
 - Alkosto: `https://www.alkosto.com/search?text={query}`
 - Éxito: `https://www.exito.com/search?text={query}`
 - MercadoLibre: `https://listado.mercadolibre.com.co/{query}`
+
+Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo.mercadolibre.com.co` y el canónico `www.mercadolibre.com.co/*/p/MCO*`.
 
 ---
 
@@ -150,7 +153,7 @@ popup.js / options.js leen IndexedDB directamente
 
 | # | Decisión |
 |---|---------|
-| 1 | **Rastreo Pasivo:** La extensión detecta automáticamente páginas de producto, sin necesidad de que el usuario pegue URLs. |
+| 1 | **Rastreo Manual:** La extensión detecta páginas de producto e inyecta un botón flotante, dejando el inicio del rastreo al control del usuario (opt-in). |
 | 2 | **Búsqueda cross-store automática** por nombre de producto. Fallback a vinculación manual si la búsqueda no es confiable (similitud < 70%). |
 | 3 | **Sin backend:** Todo el almacenamiento es local (IndexedDB). No se envían datos a servidores externos. |
 | 4 | **Selectores configurables:** `stores/selectors.json` permite actualizar selectores DOM sin modificar código JS cuando las tiendas cambien su frontend. |
@@ -161,7 +164,7 @@ popup.js / options.js leen IndexedDB directamente
 ## 📍 Estado Actual del Proyecto
 
 **Fase actual:** ✅ COMPLETO — Todos los archivos creados y listos para cargar  
-**Última actualización:** 2026-06-07  
+**Última actualización:** 2026-06-15  
 **Próximo paso:** Cargar en Chrome (`chrome://extensions`) y hacer pruebas manuales
 
 ### Checklist de Fases

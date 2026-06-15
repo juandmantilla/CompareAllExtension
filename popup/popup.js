@@ -306,8 +306,10 @@ async function detectCurrentPage() {
 function isStoreProductPage(url) {
   return /falabella\.com\.co\/falabella-co\/(product|p)\//.test(url) ||
          /alkosto\.com\/.*\/p(\/|\?|$)/.test(url) ||
+         /exito\.com\/[^/]+-\d+\/p(\?|#|$)/.test(url) ||
          /exito\.com\/.*\/p(\/|\?|$)/.test(url) ||
-         /articulo\.mercadolibre\.com\.co\//.test(url);
+         /articulo\.mercadolibre\.com\.co\//.test(url) ||
+         /mercadolibre\.com\.co\/[^/]+\/p\/MCO\d+/.test(url);
 }
 
 function renderDetectedProduct(data) {
@@ -465,8 +467,8 @@ function formatCOP(price) {
 function formatDate(ts, days) {
   const d = new Date(ts);
   if (days <= 7) return d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' });
-  if (days <= 30) return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  if (days <= 90) return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('es-CO', { month: 'short', year: '2-digit' });
 }
 
 function hexToRgba(hex, alpha) {

@@ -1,6 +1,9 @@
 /**
  * mercadolibre.js — Content script for mercadolibre.com.co
- * Detects product pages and extracts price, name, image, and SKU.
+ * Detects product pages and shows a manual track button.
+ * Supports TWO URL formats:
+ *   1. articulo.mercadolibre.com.co/MCO-XXXXXXXXX  (individual listings)
+ *   2. www.mercadolibre.com.co/{slug}/p/MCO{id}     (canonical product pages)
  */
 
 (async function () {
@@ -18,22 +21,17 @@
     return;
   }
 
-  // Send to service worker
-  utils.injectBadge('saving');
-  chrome.runtime.sendMessage({
-    action: 'PRICE_CAPTURED',
-    store: 'mercadolibre',
-    ...data,
-    url: window.location.href
-  }, (response) => {
-    if (chrome.runtime.lastError) return;
-    if (response?.success) utils.injectBadge('tracked');
-  });
+  // Inject manual track button (NO automatic tracking)
+  utils.injectTrackButton('mercadolibre', data);
 })();
 
 function isProductPage() {
   const url = window.location.href;
-  return /articulo\.mercadolibre\.com\.co\/MCO-/.test(url);
+  // Format 1: articulo.mercadolibre.com.co/MCO-XXXXXXXXX
+  if (/articulo\.mercadolibre\.com\.co\/MCO-/.test(url)) return true;
+  // Format 2: www.mercadolibre.com.co/{slug}/p/MCO{id}
+  if (/mercadolibre\.com\.co\/[^/]+\/p\/MCO\d+/.test(url)) return true;
+  return false;
 }
 
 function extractProductData() {
@@ -58,7 +56,7 @@ function extractProductData() {
       return {
         name: document.querySelector('meta[property="og:title"]')?.content || getNameFallback(),
         price,
-        image: document.querySelector('meta[property="og:image"]')?.content || getImageFallback(),
+        image: getImageFallback(),
         sku: getSkuFallback()
       };
     }
@@ -97,13 +95,41 @@ function getNameFallback() {
 }
 
 function getImageFallback() {
-  return document.querySelector('meta[property="og:image"]')?.content ||
-         document.querySelector('.ui-pdp-gallery__figure img')?.src ||
-         null;
+  const utils = window.CompareAllUtils;
+  // MercadoLibre uses gallery with lazy-loaded images
+  const strategies = [
+    () => utils.getImageFromElement(document.querySelector('meta[property="og:image"]')),
+    () => utils.getImageFromElement(document.querySelector('.ui-pdp-gallery__figure img')),
+    () => utils.getImageFromElement(document.querySelector('[data-zoom]')),
+    () => utils.getImageFromElement(document.querySelector('.ui-pdp-image')),
+    () => utils.getImageFromElement(document.querySelector('figure img')),
+    () => utils.getImageFromElement(document.querySelector('picture source')),
+    () => {
+      // Try all gallery images
+      const imgs = document.querySelectorAll('.ui-pdp-gallery img, figure img, [class*="gallery"] img');
+      for (const img of imgs) {
+        const url = utils.getImageFromElement(img);
+        if (url) return url;
+      }
+      return null;
+    }
+  ];
+  for (const strategy of strategies) {
+    const url = strategy();
+    if (url) return url;
+  }
+  return null;
 }
 
 function getSkuFallback() {
-  return document.querySelector('input[name="item_id"]')?.value ||
-         window.location.pathname.match(/MCO-?\d+/)?.[0]?.replace('-', '') ||
-         null;
+  // Try input field first
+  const inputVal = document.querySelector('input[name="item_id"]')?.value;
+  if (inputVal) return inputVal;
+  // Extract MCO ID from URL
+  const mcoMatch = window.location.href.match(/MCO[- ]?\d+/);
+  if (mcoMatch) return mcoMatch[0].replace('-', '');
+  // Extract from pathname for /p/MCO format
+  const pathMatch = window.location.pathname.match(/\/p\/(MCO\d+)/);
+  if (pathMatch) return pathMatch[1];
+  return null;
 }
