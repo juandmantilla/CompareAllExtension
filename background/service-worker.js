@@ -4,7 +4,7 @@
  */
 
 import * as DB from '../lib/db.js';
-import { searchAllStores } from '../lib/search.js';
+import { searchAllStores, parseCOPPrice } from '../lib/search.js';
 
 const ALARM_NAME = 'price-refresh';
 const DEFAULT_INTERVAL_HOURS = 6;
@@ -50,18 +50,68 @@ async function refreshAllPrices() {
     for (const [store, url] of Object.entries(product.storeUrls || {})) {
       if (!url) continue;
       try {
-        // Open tab silently, content script will capture price and send message
-        const tab = await chrome.tabs.create({ url, active: false });
-        // Tab will auto-close after content script fires (handled in message handler)
-        // Store mapping so we can close tab after capture
-        await chrome.storage.session.set({
-          [`refresh_tab_${tab.id}`]: { productId: product.id, store, tabId: tab.id }
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; CompareAll/1.0)',
+            'Accept': 'text/html,application/xhtml+xml'
+          },
+          signal: AbortSignal.timeout(15000)
         });
+        if (!response.ok) continue;
+        
+        const html = await response.text();
+        const price = extractPriceFromHtml(html, store);
+        
+        if (price) {
+          await DB.savePrice(product.id, store, price);
+          await checkPriceAlert(product.id, store, price);
+        }
       } catch (err) {
         console.warn(`[CompareAll SW] Could not refresh ${store} for product ${product.id}:`, err);
       }
     }
   }
+}
+
+function extractPriceFromHtml(html, store) {
+  // Strategy 1: OpenGraph Meta Tag
+  const ogMatch = html.match(/<meta[^>]*property="product:price:amount"[^>]*content="([^"]+)"/i) ||
+                  html.match(/<meta[^>]*content="([^"]+)"[^>]*property="product:price:amount"/i);
+  if (ogMatch) {
+    const price = parseCOPPrice(ogMatch[1]);
+    if (price) return price;
+  }
+
+  // Strategy 2: JSON-LD schema
+  const jsonLdMatches = html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi);
+  for (const match of jsonLdMatches) {
+    try {
+      const data = JSON.parse(match[1]);
+      const items = Array.isArray(data) ? data : [data];
+      for (const item of items) {
+        if (item.offers && item.offers.price) {
+          const price = parseCOPPrice(String(item.offers.price));
+          if (price) return price;
+        }
+      }
+    } catch(e) {}
+  }
+
+  // Strategy 3: Specific store regex fallbacks
+  if (store === 'falabella') {
+    const pMatch = html.match(/data-internet-price="(\d+)"/i);
+    if (pMatch) return parseInt(pMatch[1], 10);
+  }
+  if (store === 'alkosto') {
+    const pMatch = html.match(/class="price__offer--price"[^>]*>[^<]*?([\d.,]+)/i);
+    if (pMatch) return parseCOPPrice(pMatch[1]);
+  }
+  if (store === 'mercadolibre') {
+    const pMatch = html.match(/class="andes-money-amount__fraction"[^>]*>([\d.,]+)/i);
+    if (pMatch) return parseCOPPrice(pMatch[1]);
+  }
+  
+  return null;
 }
 
 // ─────────────────────────────────────────────
@@ -83,21 +133,12 @@ async function handleMessage(message, sender) {
       const { store, name, price, image, sku, url } = message;
       if (!price || price < 1000) return { success: false, reason: 'invalid_price' };
 
-      // Check if this is a refresh of an existing product
-      const tabInfo = sender?.tab?.id
-        ? (await chrome.storage.session.get(`refresh_tab_${sender.tab.id}`))[`refresh_tab_${sender.tab.id}`]
-        : null;
-
-      let productId = tabInfo?.productId;
-
-      if (!productId) {
-        // Check if product already exists by URL
-        const allProducts = await DB.getAllProducts();
-        const existing = allProducts.find(p =>
-          Object.values(p.storeUrls || {}).includes(url)
-        );
-        productId = existing?.id;
-      }
+      // Check if product already exists by URL
+      const allProducts = await DB.getAllProducts();
+      const existing = allProducts.find(p =>
+        Object.values(p.storeUrls || {}).includes(url)
+      );
+      let productId = existing?.id;
 
       if (!productId) {
         // New product — get active profile
@@ -123,12 +164,6 @@ async function handleMessage(message, sender) {
 
       // Check alert threshold
       await checkPriceAlert(productId, store, price);
-
-      // Close refresh tab if this was a background refresh
-      if (tabInfo?.tabId) {
-        chrome.tabs.remove(tabInfo.tabId).catch(() => {});
-        await chrome.storage.session.remove(`refresh_tab_${tabInfo.tabId}`);
-      }
 
       return { success: true, productId };
     }
