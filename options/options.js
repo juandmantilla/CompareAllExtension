@@ -7,8 +7,7 @@ import * as DB from '../lib/db.js';
 const STORE_META = {
   falabella: { name: 'Falabella', color: '#4A90D9' },
   alkosto:   { name: 'Alkosto',   color: '#E84040' },
-  exito:     { name: 'Éxito',     color: '#F5A623' },
-  mercadolibre: { name: 'MercadoLibre', color: '#FFF159' }
+  exito:     { name: 'Éxito',     color: '#F5A623' }
 };
 
 let allProfiles = [];
@@ -113,9 +112,13 @@ async function buildProductRow(product) {
   const storeChips = Object.entries(STORE_META).map(([store, meta]) => {
     const status = product.storeStatuses?.[store];
     const hasUrl  = !!product.storeUrls?.[store];
+    const searchUrl = product.storeSearchUrls?.[store];
     if (!status && !hasUrl) return '';
     const statusClass = status || (hasUrl ? 'found' : 'not_found');
     const label = store === 'exito' ? 'Éxito' : meta.name;
+    if (statusClass === 'manual_required' && searchUrl) {
+      return `<a href="${escapeHtml(searchUrl)}" target="_blank" class="store-chip chip-${store} manual_required" title="Buscar manualmente en ${label}" style="text-decoration:none">🔍 ${label}</a>`;
+    }
     return `<span class="store-chip chip-${store} ${statusClass}">${label}</span>`;
   }).filter(Boolean).join('');
 
@@ -123,11 +126,16 @@ async function buildProductRow(product) {
     ? `<img src="${escapeHtml(product.image)}" class="product-thumb-sm" alt="" onerror="this.style.display='none'">`
     : `<div class="product-thumb-sm" style="display:flex;align-items:center;justify-content:center;font-size:18px">📦</div>`;
 
+  const firstUrl = Object.values(product.storeUrls || {}).find(u => !!u) || '#';
+
   return `<tr>
     <td>
       <div class="product-cell">
         ${thumb}
-        <span class="product-name-cell" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span>
+        <a href="${escapeHtml(firstUrl)}" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 4px;">
+          <span class="product-name-cell" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span>
+          ${firstUrl !== '#' ? '<span style="font-size: 10px; color: var(--text-secondary);">🔗</span>' : ''}
+        </a>
       </div>
     </td>
     <td><div class="store-chips">${storeChips || '—'}</div></td>
@@ -233,12 +241,37 @@ function openProductModal(productId) {
 
   document.getElementById('edit-product-id').value = productId;
   document.getElementById('edit-product-name').value = product.name || '';
-  document.getElementById('edit-url-falabella').value = product.storeUrls?.falabella || '';
-  document.getElementById('edit-url-alkosto').value   = product.storeUrls?.alkosto   || '';
-  document.getElementById('edit-url-exito').value     = product.storeUrls?.exito     || '';
-  
-  const mlInput = document.getElementById('edit-url-mercadolibre');
-  if (mlInput) mlInput.value = product.storeUrls?.mercadolibre || '';
+
+  // Fill URL fields and show suggested search links for manual_required stores
+  const urlFields = [
+    { store: 'falabella',    id: 'edit-url-falabella' },
+    { store: 'alkosto',      id: 'edit-url-alkosto' },
+    { store: 'exito',        id: 'edit-url-exito' }
+  ];
+  for (const { store, id } of urlFields) {
+    const input = document.getElementById(id);
+    if (!input) continue;
+    input.value = product.storeUrls?.[store] || '';
+    // Find or create a hint element below the input
+    let hint = document.getElementById(`hint-${id}`);
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = `hint-${id}`;
+      hint.style.cssText = 'font-size:11px;margin-top:3px;min-height:16px';
+      input.parentNode.insertBefore(hint, input.nextSibling);
+    }
+    const searchUrl = product.storeSearchUrls?.[store];
+    const status    = product.storeStatuses?.[store];
+    if (!product.storeUrls?.[store] && searchUrl && status === 'manual_required') {
+      const storeName = STORE_META[store]?.name || store;
+      hint.innerHTML = `<a href="${escapeHtml(searchUrl)}" target="_blank"
+        style="color:#F5A623;text-decoration:none" title="Abre la búsqueda sugerida y pega la URL del producto">
+        🔍 Buscar &ldquo;${escapeHtml(product.name)}&rdquo; en ${storeName} &rarr;
+      </a>`;
+    } else {
+      hint.innerHTML = '';
+    }
+  }
 
   const profileSelect = document.getElementById('edit-product-profile');
   profileSelect.innerHTML = allProfiles.map(p =>
@@ -318,14 +351,12 @@ function initEventListeners() {
       storeUrls: {
         falabella: document.getElementById('edit-url-falabella').value.trim() || undefined,
         alkosto:   document.getElementById('edit-url-alkosto').value.trim() || undefined,
-        exito:     document.getElementById('edit-url-exito').value.trim() || undefined,
-        mercadolibre: document.getElementById('edit-url-mercadolibre') ? document.getElementById('edit-url-mercadolibre').value.trim() || undefined : undefined
+        exito:     document.getElementById('edit-url-exito').value.trim() || undefined
       },
       storeStatuses: {
         falabella: document.getElementById('edit-url-falabella').value.trim() ? 'found' : undefined,
         alkosto:   document.getElementById('edit-url-alkosto').value.trim()   ? 'found' : undefined,
-        exito:     document.getElementById('edit-url-exito').value.trim()     ? 'found' : undefined,
-        mercadolibre: document.getElementById('edit-url-mercadolibre') && document.getElementById('edit-url-mercadolibre').value.trim() ? 'found' : undefined
+        exito:     document.getElementById('edit-url-exito').value.trim()     ? 'found' : undefined
       }
     };
 
@@ -357,8 +388,8 @@ function initEventListeners() {
   });
 
   // Settings: interval
-  document.getElementById('btn-save-interval').addEventListener('click', async () => {
-    const hours = parseInt(document.getElementById('setting-interval').value);
+  document.getElementById('setting-interval').addEventListener('change', async (e) => {
+    const hours = parseInt(e.target.value);
     await chrome.storage.local.set({ refreshInterval: hours });
     await chrome.runtime.sendMessage({ action: 'UPDATE_ALARM_INTERVAL', hours });
     showToast('Frecuencia guardada');

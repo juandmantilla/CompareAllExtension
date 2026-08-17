@@ -3,7 +3,7 @@
   "name": "CompareAll — Comparador de Precios Colombia",
   "short_name": "CompareAll",
   "version": "1.0.0",
-  "description": "Rastrea precios en Falabella, Alkosto y Éxito. Historial de 6 meses, mejor precio automático y soporte de múltiples perfiles.",
+  "description": "Rastrea precios en Falabella, Alkosto y Éxito. Historial de hasta 2 años, mejor precio y múltiples perfiles.",
   "author": "CompareAll",
   "icons": {
     "16":  "icons/icon16.png",
@@ -34,7 +34,8 @@
     "*://*.falabella.com.co/*",
     "*://*.alkosto.com/*",
     "*://*.exito.com/*",
-    "*://*.mercadolibre.com.co/*"
+    "*://*.algolia.net/*",
+    "*://*.duckduckgo.com/*"
   ],
   "content_scripts": [
     {
@@ -57,13 +58,6 @@
       ],
       "js": ["content-scripts/utils.js", "content-scripts/exito.js"],
       "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "*://*.mercadolibre.com.co/*"
-      ],
-      "js": ["content-scripts/utils.js", "content-scripts/mercadolibre.js"],
-      "run_at": "document_idle"
     }
   ],
   "content_security_policy": {
@@ -75,8 +69,7 @@
       "matches": [
         "*://*.falabella.com.co/*",
         "*://*.alkosto.com/*",
-        "*://*.exito.com/*",
-        "*://*.mercadolibre.com.co/*"
+        "*://*.exito.com/*"
       ]
     }
   ]

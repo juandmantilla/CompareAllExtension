@@ -7,8 +7,7 @@ import * as DB from '../lib/db.js';
 const STORE_META = {
   falabella: { name: 'Falabella', color: '#4A90D9', emoji: '🔵' },
   alkosto:   { name: 'Alkosto',   color: '#E84040', emoji: '🔴' },
-  exito:     { name: 'Éxito',     color: '#F5A623', emoji: '🟠' },
-  mercadolibre: { name: 'MercadoLibre', color: '#FFF159', emoji: '🟡' }
+  exito:     { name: 'Éxito',     color: '#F5A623', emoji: '🟠' }
 };
 
 let activeProfileId = null;
@@ -306,8 +305,8 @@ async function detectCurrentPage() {
 function isStoreProductPage(url) {
   return /falabella\.com\.co\/falabella-co\/(product|p)\//.test(url) ||
          /alkosto\.com\/.*\/p(\/|\?|$)/.test(url) ||
-         /exito\.com\/.*\/p(\/|\?|$)/.test(url) ||
-         /articulo\.mercadolibre\.com\.co\//.test(url);
+         /exito\.com\/[^/]+-\d+\/p(\?|#|$)/.test(url) ||
+         /exito\.com\/.*\/p(\/|\?|$)/.test(url);
 }
 
 function renderDetectedProduct(data) {
@@ -417,10 +416,9 @@ async function handleManualAdd() {
   if (/falabella\.com\.co/.test(url)) store = 'falabella';
   else if (/alkosto\.com/.test(url)) store = 'alkosto';
   else if (/exito\.com/.test(url)) store = 'exito';
-  else if (/mercadolibre\.com\.co/.test(url)) store = 'mercadolibre';
 
   if (!store) {
-    status.textContent = '❌ URL no reconocida. Use Falabella, Alkosto, Éxito o MercadoLibre.';
+    status.textContent = '❌ URL no reconocida. Use Falabella, Alkosto o Éxito.';
     return;
   }
 
@@ -465,8 +463,8 @@ function formatCOP(price) {
 function formatDate(ts, days) {
   const d = new Date(ts);
   if (days <= 7) return d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' });
-  if (days <= 30) return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  if (days <= 90) return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('es-CO', { month: 'short', year: '2-digit' });
 }
 
 function hexToRgba(hex, alpha) {

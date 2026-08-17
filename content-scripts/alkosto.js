@@ -1,6 +1,6 @@
 /**
  * alkosto.js — Content script for alkosto.com
- * Detects product pages and extracts price, name, image, and SKU.
+ * Detects product pages and shows a manual track button.
  */
 
 (async function () {
@@ -18,16 +18,8 @@
     return;
   }
 
-  utils.injectBadge('saving');
-  chrome.runtime.sendMessage({
-    action: 'PRICE_CAPTURED',
-    store: 'alkosto',
-    ...data,
-    url: window.location.href
-  }, (response) => {
-    if (chrome.runtime.lastError) return;
-    if (response?.success) utils.injectBadge('tracked');
-  });
+  // Inject manual track button (NO automatic tracking)
+  utils.injectTrackButton('alkosto', data);
 })();
 
 function isProductPage() {
@@ -75,7 +67,7 @@ function extractProductData() {
       return {
         name: document.querySelector('meta[property="og:title"]')?.content,
         price,
-        image: document.querySelector('meta[property="og:image"]')?.content,
+        image: getImageFallback(),
         sku: getSkuFallback()
       };
     }
@@ -120,9 +112,31 @@ function getNameFallback() {
 }
 
 function getImageFallback() {
-  return document.querySelector('meta[property="og:image"]')?.content ||
-         document.querySelector('.product-images img, #product-image img')?.src ||
-         null;
+  const utils = window.CompareAllUtils;
+  // Try multiple strategies — Alkosto uses data-src for lazy loading
+  const strategies = [
+    () => utils.getImageFromElement(document.querySelector('meta[property="og:image"]')),
+    () => utils.getImageFromElement(document.querySelector('.product-images img')),
+    () => utils.getImageFromElement(document.querySelector('#product-image img')),
+    () => utils.getImageFromElement(document.querySelector('[class*="product-gallery"] img')),
+    () => utils.getImageFromElement(document.querySelector('[class*="product__gallery"] img')),
+    () => utils.getImageFromElement(document.querySelector('.js-zoom-image')),
+    () => utils.getImageFromElement(document.querySelector('picture source')),
+    // Alkosto sometimes puts image in a data-src or data-zoom attribute
+    () => {
+      const imgs = document.querySelectorAll('.product-images img, .product__gallery img, [class*="gallery"] img');
+      for (const img of imgs) {
+        const url = utils.getImageFromElement(img);
+        if (url) return url;
+      }
+      return null;
+    }
+  ];
+  for (const strategy of strategies) {
+    const url = strategy();
+    if (url) return url;
+  }
+  return null;
 }
 
 function getSkuFallback() {
