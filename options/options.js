@@ -123,11 +123,16 @@ async function buildProductRow(product) {
     ? `<img src="${escapeHtml(product.image)}" class="product-thumb-sm" alt="" onerror="this.style.display='none'">`
     : `<div class="product-thumb-sm" style="display:flex;align-items:center;justify-content:center;font-size:18px">📦</div>`;
 
+  const firstUrl = Object.values(product.storeUrls || {}).find(u => !!u) || '#';
+
   return `<tr>
     <td>
       <div class="product-cell">
         ${thumb}
-        <span class="product-name-cell" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span>
+        <a href="${escapeHtml(firstUrl)}" target="_blank" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 4px;">
+          <span class="product-name-cell" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span>
+          ${firstUrl !== '#' ? '<span style="font-size: 10px; color: var(--text-secondary);">🔗</span>' : ''}
+        </a>
       </div>
     </td>
     <td><div class="store-chips">${storeChips || '—'}</div></td>
@@ -357,8 +362,8 @@ function initEventListeners() {
   });
 
   // Settings: interval
-  document.getElementById('btn-save-interval').addEventListener('click', async () => {
-    const hours = parseInt(document.getElementById('setting-interval').value);
+  document.getElementById('setting-interval').addEventListener('change', async (e) => {
+    const hours = parseInt(e.target.value);
     await chrome.storage.local.set({ refreshInterval: hours });
     await chrome.runtime.sendMessage({ action: 'UPDATE_ALARM_INTERVAL', hours });
     showToast('Frecuencia guardada');

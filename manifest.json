@@ -34,7 +34,10 @@
     "*://*.falabella.com.co/*",
     "*://*.alkosto.com/*",
     "*://*.exito.com/*",
-    "*://*.mercadolibre.com.co/*"
+    "*://*.mercadolibre.com.co/*",
+    "*://*.mercadolibre.com/*",
+    "*://*.algolia.net/*",
+    "*://*.api.mercadolibre.com/*"
   ],
   "content_scripts": [
     {

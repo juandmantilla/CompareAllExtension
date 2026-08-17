@@ -118,15 +118,15 @@ popup.js / options.js leen IndexedDB directamente
 
 **Estrategia:**
 1. Cuando se captura un producto nuevo, el service worker invoca `searchAllStores(productName)`.
-2. Para cada tienda, se construye una URL de búsqueda y se hace `fetch()` del HTML de resultados.
-3. Se parsea el primer resultado con `DOMParser` y se extrae la URL del producto + precio.
+2. Para cada tienda, se construye una URL de búsqueda y se hace un `fetch()` silencioso usando cabeceras que simulan un navegador real (Spoofing de `User-Agent` y `Accept`) para evadir bloqueos de seguridad (WAF) como Cloudflare o Akamai.
+3. Debido a que *Manifest V3* no permite el uso de `DOMParser` en el Service Worker, el código fuente HTML descargado se procesa mediante una **función de respaldo basada en Expresiones Regulares (RegEx)**. Esta función prioriza la extracción de metadatos estructurados (`JSON-LD`), y en su defecto, busca patrones en el código HTML para deducir enlaces de productos y precios.
 4. Si la búsqueda falla o el resultado no coincide (similitud de nombre < 70%), se marca como **"buscar manualmente"** y se notifica al usuario.
 5. El usuario puede corregir/confirmar los URLs vinculados desde la página de opciones.
 
 **Endpoints de búsqueda:**
 - Falabella: `https://www.falabella.com.co/falabella-co/search?Ntt={query}`
 - Alkosto: `https://www.alkosto.com/search?text={query}`
-- Éxito: `https://www.exito.com/search?text={query}`
+- Éxito: `https://www.exito.com/s?q={query}` (La función `fetch` sigue redirecciones 301/308 hacia categorías específicas automáticamente).
 - MercadoLibre: `https://listado.mercadolibre.com.co/{query}`
 
 Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo.mercadolibre.com.co` y el canónico `www.mercadolibre.com.co/*/p/MCO*`.
@@ -158,13 +158,14 @@ Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo
 | 3 | **Sin backend:** Todo el almacenamiento es local (IndexedDB). No se envían datos a servidores externos. |
 | 4 | **Selectores configurables:** `stores/selectors.json` permite actualizar selectores DOM sin modificar código JS cuando las tiendas cambien su frontend. |
 | 5 | **Temas Personalizables:** Soporte nativo para Modo Oscuro (por defecto) y Modo Claro, configurable desde las Opciones. |
+| 6 | **Extracción RegEx en Segundo Plano:** En MV3 no existe `DOMParser` en el fondo. Toda la lógica de extracción cruzada de precios y rastreo desatendido se realiza con expresiones regulares eficientes analizando etiquetas estandarizadas (JSON-LD, OpenGraph) o clases CSS. |
 
 ---
 
 ## 📍 Estado Actual del Proyecto
 
-**Fase actual:** ✅ COMPLETO — Todos los archivos creados y listos para cargar  
-**Última actualización:** 2026-06-15  
+**Fase actual:** ✅ COMPLETO — Todos los archivos creados, depurados y funcionales.  
+**Última actualización:** 2026-07-26  
 **Próximo paso:** Cargar en Chrome (`chrome://extensions`) y hacer pruebas manuales
 
 ### Checklist de Fases
@@ -183,10 +184,10 @@ Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo
 
 ---
 
-## 🐛 Problemas Conocidos / TODOs
+## 🐛 Problemas Conocidos / Consideraciones Técnicas
 
-- Los selectores DOM en `selectors.json` pueden necesitar actualización si las tiendas rediseñan su frontend. Verificar periódicamente.
-- La búsqueda cross-store con `fetch()` puede fallar si las tiendas bloquean requests sin cookies de sesión. En ese caso, se activa el fallback manual.
+- Los selectores DOM en `selectors.json` pueden necesitar actualización si las tiendas rediseñan fuertemente su frontend. Sin embargo, las etiquetas estructuradas (JSON-LD y OpenGraph) implementadas como rescate por RegEx suelen ser muy estables.
+- Si las tiendas detectan un alto volumen de consultas o actualizan sus reglas WAF, es posible que los requests `fetch()` silenciosos vuelvan a fallar. Para esto se debe mantener actualizado el `User-Agent` de `lib/search.js`.
 - Firefox MV3: verificar que `chrome.*` APIs funcionen con el polyfill `browser.*`.
 
 ---
