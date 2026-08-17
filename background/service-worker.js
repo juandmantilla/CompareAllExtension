@@ -106,10 +106,6 @@ function extractPriceFromHtml(html, store) {
     const pMatch = html.match(/class="price__offer--price"[^>]*>[^<]*?([\d.,]+)/i);
     if (pMatch) return parseCOPPrice(pMatch[1]);
   }
-  if (store === 'mercadolibre') {
-    const pMatch = html.match(/class="andes-money-amount__fraction"[^>]*>([\d.,]+)/i);
-    if (pMatch) return parseCOPPrice(pMatch[1]);
-  }
   
   return null;
 }
@@ -213,8 +209,9 @@ async function triggerCrossStoreSearch(productId, productName, sourceStore) {
     const product = await DB.getProduct(productId);
     if (!product) return;
 
-    const updatedUrls = { ...product.storeUrls };
-    const updatedStatuses = { ...product.storeStatuses };
+    const updatedUrls       = { ...product.storeUrls };
+    const updatedStatuses   = { ...product.storeStatuses };
+    const updatedSearchUrls = { ...(product.storeSearchUrls || {}) };
 
     let needsManualReview = false;
 
@@ -222,19 +219,27 @@ async function triggerCrossStoreSearch(productId, productName, sourceStore) {
       if (result.status === 'found') {
         updatedUrls[store] = result.url;
         updatedStatuses[store] = 'found';
+        delete updatedSearchUrls[store]; // no longer needed
         // Save initial price if available
         if (result.price) {
           await DB.savePrice(productId, store, result.price);
         }
       } else if (result.status === 'manual_required') {
         updatedStatuses[store] = 'manual_required';
+        // Persist the suggested search URL so the UI can surface it
+        if (result.searchUrl) updatedSearchUrls[store] = result.searchUrl;
         needsManualReview = true;
       } else {
         updatedStatuses[store] = result.status || 'not_found';
       }
     }
 
-    await DB.updateProduct({ ...product, storeUrls: updatedUrls, storeStatuses: updatedStatuses });
+    await DB.updateProduct({
+      ...product,
+      storeUrls:       updatedUrls,
+      storeStatuses:   updatedStatuses,
+      storeSearchUrls: updatedSearchUrls
+    });
 
     if (needsManualReview) {
       chrome.notifications.create(`manual_review_${productId}`, {
@@ -271,7 +276,7 @@ async function checkPriceAlert(productId, store, currentPrice) {
     const dropPercent = ((oldPrice - currentPrice) / oldPrice) * 100;
 
     if (dropPercent >= profile.alertThreshold) {
-      const storeNames = { falabella: 'Falabella', alkosto: 'Alkosto', exito: 'Éxito', mercadolibre: 'MercadoLibre' };
+      const storeNames = { falabella: 'Falabella', alkosto: 'Alkosto', exito: 'Éxito' };
       chrome.notifications.create(`price_drop_${productId}_${store}`, {
         type: 'basic',
         iconUrl: chrome.runtime.getURL('icons/icon48.png'),

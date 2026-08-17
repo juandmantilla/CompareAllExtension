@@ -1,6 +1,6 @@
 # CompareAll — Extensión de Comparación de Precios
 
-CompareAll es una extensión de navegador (compatible con Chromium y Firefox) que te ayuda a rastrear pasivamente los precios de productos tecnológicos y de consumo en las principales tiendas colombianas: **Falabella, Alkosto, Almacenes Éxito y MercadoLibre**.
+CompareAll es una extensión de navegador (compatible con Chromium y Firefox) que te ayuda a rastrear pasivamente los precios de productos tecnológicos y de consumo en las principales tiendas colombianas: **Falabella, Alkosto y Almacenes Éxito**.
 
 La extensión guarda el historial de precios hasta por 6 meses de manera 100% local (sin enviar datos a servidores externos), busca automáticamente el mismo producto en otras tiendas y te permite gestionar múltiples perfiles de usuario.
 
@@ -49,14 +49,14 @@ CompareAll funciona de forma pasiva, lo que significa que detecta automáticamen
 
 ### Método 1: Navegación Automática (Recomendado)
 1. Asegúrate de tener seleccionado tu perfil activo desde el popup o desde la página de opciones.
-2. Navega normalmente hacia una página de producto en alguna de las tiendas soportadas (**Falabella, Alkosto, Éxito o MercadoLibre**).
+2. Navega normalmente hacia una página de producto en alguna de las tiendas soportadas (**Falabella, Alkosto o Éxito**).
 3. Espera a que la página cargue. Verás aparecer un pequeño botón en la parte inferior derecha de la pantalla que dice **"📊 CompareAll: Rastreado ✓"**.
 4. ¡El artículo ya se ha añadido a tu perfil actual!
    - *Nota:* La extensión intentará buscar automáticamente el mismo producto en el resto de las tiendas en segundo plano para poder comparar los precios de inmediato.
 
 ### Método 2: Vinculación Manual
 Si la extensión no logra encontrar automáticamente el producto en otra tienda, puedes añadirlo manualmente:
-1. Copia el enlace (URL) del producto que deseas añadir (ej. el link de un artículo en MercadoLibre).
+1. Copia el enlace (URL) del producto que deseas añadir.
 2. Abre el **popup** de CompareAll (haciendo clic en el ícono de la extensión).
 3. Ve a la pestaña **"+ Añadir"**.
 4. Pega el enlace en la caja de texto debajo de "Agregar manualmente" y presiona la tecla **Enter** o haz clic en el botón de buscar.
@@ -71,7 +71,7 @@ El historial de precios es uno de los mayores beneficios de CompareAll, permiti�
 2. En la pestaña **"💰 Precios"**, verás una lista con todos los productos de tu perfil activo y el resumen de los precios encontrados en cada tienda.
 3. Para ver el historial detallado de un producto, haz clic en el botón **"📈 Ver historial"** situado en la tarjeta del producto correspondiente.
 4. Se abrirá la pestaña de **Historial**, mostrando una gráfica lineal interactiva:
-   - **Líneas de colores:** Cada tienda tiene un color asignado (Falabella en azul, Alkosto en rojo, Éxito en naranja, MercadoLibre en amarillo).
+   - **Líneas de colores:** Cada tienda tiene un color asignado (Falabella en azul, Alkosto en rojo, Éxito en naranja).
    - **Rango de tiempo:** En la parte inferior, puedes seleccionar visualizar los últimos `7 Días`, `30 Días` o `6 Meses`.
    - **Estadísticas:** Debajo de la gráfica verás el precio mínimo, máximo y el promedio histórico del artículo en cada tienda.
 

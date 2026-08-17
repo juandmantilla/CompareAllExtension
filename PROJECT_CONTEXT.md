@@ -9,8 +9,8 @@
 Extensión de navegador (Chromium / Firefox, Manifest V3) que:
 1. **Añade un botón de rastreo manual** cuando el usuario navega a una página de producto tecnológico en las tiendas colombianas soportadas.
 2. **Registra el precio** y lo almacena localmente al añadir el producto (IndexedDB, sin backend).
-3. **Busca automáticamente** el mismo producto por nombre en las otras tiendas (con fallback manual).
-4. **Muestra el historial de precios** de hasta 2 años con gráfica (Chart.js).
+3. **Enriquece y busca automáticamente** el mismo producto en otras tiendas usando inteligencia por modelo técnico e investigación en Internet (con fallback manual).
+4. **Muestra el historial de precios** de hasta 2 años con gráfica lineal interactiva (Chart.js).
 5. **Indica el mejor precio actual** y en qué tienda conseguirlo.
 6. Soporta **múltiples perfiles** de usuario para organizar distintas listas de productos.
 
@@ -18,12 +18,13 @@ Extensión de navegador (Chromium / Firefox, Manifest V3) que:
 
 ## 🏬 Tiendas Soportadas (V1)
 
-| Tienda | Dominio | Color en gráficas |
-|--------|---------|-------------------|
-| Falabella | falabella.com.co | `#4A90D9` (azul) |
-| Alkosto | alkosto.com | `#E84040` (rojo) |
-| Almacenes Éxito | exito.com | `#F5A623` (naranja) |
-| MercadoLibre | mercadolibre.com.co | `#FFF159` (amarillo) |
+| Tienda | Dominio | Color en gráficas | Tipo de Integración |
+|--------|---------|-------------------|----------------------|
+| Falabella | falabella.com.co | `#4A90D9` (azul) | HTML Search + State Blob / Regex Extraction |
+| Alkosto | alkosto.com | `#E84040` (rojo) | Algolia REST API (`QX5IPS1B1Q`) |
+| Almacenes Éxito | exito.com | `#F5A623` (naranja) | VTEX Catalog API |
+
+> *Nota: Se removió el soporte para MercadoLibre por completo a solicitud del usuario.*
 
 ---
 
@@ -36,7 +37,7 @@ Extensión de navegador (Chromium / Firefox, Manifest V3) que:
 | Lógica | JavaScript ES2022 (ES Modules donde MV3 lo permite) |
 | Gráficas | Chart.js 4.x (incluido localmente en `/lib/`) |
 | Base de datos | IndexedDB (wrapper en `/lib/db.js`) |
-| Búsqueda cross-store | Fetch desde service worker a endpoints de búsqueda de cada tienda |
+| Búsqueda cross-store | Fetch desatendido + Web Enrichment (DuckDuckGo API) + Algolia + VTEX API |
 
 ---
 
@@ -45,15 +46,15 @@ Extensión de navegador (Chromium / Firefox, Manifest V3) que:
 ```
 CompareAllExtension/
 ├── PROJECT_CONTEXT.md          ← Este archivo
-├── manifest.json               ← Configuración MV3
+├── README.md                   ← Manual de uso e instalación
+├── manifest.json               ← Configuración MV3 y permisos
 ├── background/
-│   └── service-worker.js       ← Alarmas, mensajería, actualizaciones periódicas, búsqueda cross-store
+│   └── service-worker.js       ← Alarmas, mensajería, actualizaciones periódicas, notificaciones
 ├── content-scripts/
 │   ├── utils.js                ← Helpers compartidos (extracción de precio, formato COP)
 │   ├── falabella.js            ← Extractor para falabella.com.co
 │   ├── alkosto.js              ← Extractor para alkosto.com
-│   ├── exito.js                ← Extractor para exito.com
-│   └── mercadolibre.js         ← Extractor para mercadolibre.com.co
+│   └── exito.js                ← Extractor para exito.com
 ├── popup/
 │   ├── popup.html              ← UI del popup (420px wide)
 │   ├── popup.js                ← Lógica del popup (Chart.js, perfiles, mejor precio)
@@ -64,10 +65,10 @@ CompareAllExtension/
 │   └── options.css             ← Estilos consistentes con popup
 ├── lib/
 │   ├── db.js                   ← Abstracción IndexedDB (stores: products, price_history, profiles)
-│   ├── search.js               ← Motor de búsqueda automática cross-store
+│   ├── search.js               ← Motor de búsqueda automática cross-store con enriquecimiento web y modelo
 │   └── chart.min.js            ← Chart.js 4.x (local, requerido por CSP MV3)
 ├── stores/
-│   └── selectors.json          ← Selectores DOM y patrones URL por tienda (editar aquí si cambian)
+│   └── selectors.json          ← Selectores DOM y patrones URL por tienda
 └── icons/
     ├── icon16.png
     ├── icon48.png
@@ -81,7 +82,7 @@ CompareAllExtension/
 ```
 Usuario navega a página de producto
         ↓
-content-script (falabella/alkosto/exito/mercadolibre).js
+content-script (falabella / alkosto / exito).js
   → Extrae: nombre, precio, imagen, SKU, URL
   → Inyecta botón "Rastrear con CompareAll" en la página
         ↓
@@ -89,13 +90,21 @@ Usuario hace clic en el botón
         ↓
 service-worker.js recibe { action: 'PRICE_CAPTURED', ... }
   → Guarda en IndexedDB (db.js → price_history)
-  → Si es producto nuevo: llama search.js para buscar en otras tiendas
-  → Si el precio bajó del umbral: dispara notificación Chrome
+  → Si es producto nuevo: llama searchAllStores(productName, sourceStore)
+        ↓
+search.js
+  1. Ejecuta enrichProductFromInternet(productName)
+     → Consulta desatendida a DuckDuckGo HTML API
+     → Identifica el código de modelo oficial (MPN) (ej: "15-fc0287la", "SM-R177")
+  2. Genera consulta limpia con cleanProductName(name) (Marca + Modelo + Términos Clave)
+  3. Ejecuta búsquedas paralelas en tiendas objetivo (Algolia/VTEX/Falabella HTML)
+  4. Evalúa similitud con nameSimilarity(original, candidate)
+     → Aplica bonificación (+35%) si coinciden modelos técnicos
+     → Aplica penalización (-25%) si los modelos son incompatibles
         ↓
 popup.js / options.js leen IndexedDB directamente
   → Renderizan gráfica Chart.js
   → Calculan mejor precio (db.getBestPrice)
-  → Muestran delta % vs semana pasada
 ```
 
 ---
@@ -107,45 +116,48 @@ popup.js / options.js leen IndexedDB directamente
 | Object Store | Key Path | Descripción |
 |---|---|---|
 | `profiles` | `id` (auto) | `{ id, name, productIds[], alertThreshold, createdAt }` |
-| `products` | `id` (auto) | `{ id, name, image, profileId, storeUrls: {falabella, alkosto, exito, mercadolibre}, sku, addedAt }` |
-| `price_history` | `id` (auto) | `{ id, productId, store, price, timestamp }` — purga entradas > 2 años |
+| `products` | `id` (auto) | `{ id, name, image, profileId, storeUrls: {falabella, alkosto, exito}, storeStatuses: {falabella, alkosto, exito}, storeSearchUrls: {falabella, alkosto, exito}, sku, addedAt }` |
+| `price_history` | `id` (auto) | `{ id, productId, store, price, timestamp }` — almacena hasta 2 años |
 
 ---
 
-## ⚙️ Búsqueda Automática Cross-Store
+## ⚙️ Arquitectura de Búsqueda Cross-Store e Inteligencia de Modelos
 
 **Implementada en:** `lib/search.js`
 
-**Estrategia:**
-1. Cuando se captura un producto nuevo, el service worker invoca `searchAllStores(productName)`.
-2. Para cada tienda, se construye una URL de búsqueda y se hace un `fetch()` silencioso usando cabeceras que simulan un navegador real (Spoofing de `User-Agent` y `Accept`) para evadir bloqueos de seguridad (WAF) como Cloudflare o Akamai.
-3. Debido a que *Manifest V3* no permite el uso de `DOMParser` en el Service Worker, el código fuente HTML descargado se procesa mediante una **función de respaldo basada en Expresiones Regulares (RegEx)**. Esta función prioriza la extracción de metadatos estructurados (`JSON-LD`), y en su defecto, busca patrones en el código HTML para deducir enlaces de productos y precios.
-4. Si la búsqueda falla o el resultado no coincide (similitud de nombre < 70%), se marca como **"buscar manualmente"** y se notifica al usuario.
-5. El usuario puede corregir/confirmar los URLs vinculados desde la página de opciones.
+### 1. Enriquecimiento Web Previsto (`enrichProductFromInternet`)
+- Antes de consultar las tiendas, se realiza una búsqueda web previa silenciosa en DuckDuckGo HTML API (`https://html.duckduckgo.com/html/?q=...`).
+- Su objetivo es extraer el **número de parte / código de modelo oficial del fabricante (MPN)** a partir del nombre comercial de la tienda origen.
+- Esto permite convertir nombres genéricos o promocionales en consultas de alta precisión (ej: *"Portátil HP 15.6 Ryzen 7 16GB"* → *"HP 15-fc0287la"*).
 
-**Endpoints de búsqueda:**
-- Falabella: `https://www.falabella.com.co/falabella-co/search?Ntt={query}`
-- Alkosto: `https://www.alkosto.com/search?text={query}`
-- Éxito: `https://www.exito.com/s?q={query}` (La función `fetch` sigue redirecciones 301/308 hacia categorías específicas automáticamente).
-- MercadoLibre: `https://listado.mercadolibre.com.co/{query}`
+### 2. Destilado de Consulta Canónica (`cleanProductName`)
+- Extrae la marca principal (HP, Samsung, Lenovo, Apple, Asus, etc.) y prioriza los tokens con formato de modelo (combinación de dígitos y letras como `7730U`, `G06`, `S24`, `fc0287la`).
+- Descarta stopwords (colores, términos de regalo, palabras de conexión) y especificaciones técnicas genéricas (RAM, SSD, screen size) para evitar ruido en motores de búsqueda.
 
-Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo.mercadolibre.com.co` y el canónico `www.mercadolibre.com.co/*/p/MCO*`.
+### 3. Consultas por Tienda
+- **Alkosto**: Algolia API REST con App ID `QX5IPS1B1Q` y API Key pública. Obtiene hasta 10 hits por consulta y los filtra por similitud.
+- **Éxito**: VTEX Catalog API (`/api/catalog_system/pub/products/search?ft={query}`).
+- **Falabella**: Búsqueda HTML + RegEx fallback / `__NEXT_DATA__` state blobs parsing.
+
+### 4. Algoritmo de Similitud Ponderado (`nameSimilarity`)
+- Combina la similitud de Jaccard (conjuntos de palabras) con coincidencia de substrings.
+- **Validación de Código de Modelo (`extractModelCodes`)**:
+  - **+35% Bonus**: Si ambos nombres comparten el mismo código de modelo oficial alfanumérico.
+  - **-25% Penalización**: Si ambos nombres poseen códigos de modelo diferentes (evita falsos positivos entre modelos similares de distinta generación/procesador).
 
 ---
 
 ## 🔔 Notificaciones
 
-- Notificación cuando el precio de un producto rastreado baja X% o más (configurable por perfil).
-- Notificación cuando la búsqueda automática cross-store requiere confirmación manual.
+- Alerta al usuario cuando el precio de un producto baje X% o más (configurable por perfil).
 
 ---
 
 ## 👤 Sistema de Perfiles
 
 - **Perfil activo** guardado en `chrome.storage.local` (`activeProfileId`).
-- El popup siempre muestra los productos del perfil activo.
-- Desde opciones se puede crear, renombrar, eliminar perfiles y mover productos entre perfiles.
-- **Perfil por defecto** creado automáticamente en la primera instalación ("Mi Lista").
+- El popup y el content script agregan automáticamente los productos al perfil activo.
+- Desde la interfaz de Opciones se pueden crear, renombrar, eliminar perfiles y transferir productos entre listas.
 
 ---
 
@@ -153,57 +165,19 @@ Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo
 
 | # | Decisión |
 |---|---------|
-| 1 | **Rastreo Manual:** La extensión detecta páginas de producto e inyecta un botón flotante, dejando el inicio del rastreo al control del usuario (opt-in). |
-| 2 | **Búsqueda cross-store automática** por nombre de producto. Fallback a vinculación manual si la búsqueda no es confiable (similitud < 70%). |
-| 3 | **Sin backend:** Todo el almacenamiento es local (IndexedDB). No se envían datos a servidores externos. |
-| 4 | **Selectores configurables:** `stores/selectors.json` permite actualizar selectores DOM sin modificar código JS cuando las tiendas cambien su frontend. |
-| 5 | **Temas Personalizables:** Soporte nativo para Modo Oscuro (por defecto) y Modo Claro, configurable desde las Opciones. |
-| 6 | **Extracción RegEx en Segundo Plano:** En MV3 no existe `DOMParser` en el fondo. Toda la lógica de extracción cruzada de precios y rastreo desatendido se realiza con expresiones regulares eficientes analizando etiquetas estandarizadas (JSON-LD, OpenGraph) o clases CSS. |
+| 1 | **Rastreo Manual (Opt-In):** La extensión inyecta un botón flotante en páginas de producto para que el usuario decida activamente qué artículos seguir. |
+| 2 | **Búsqueda Inteligente por Modelo e Internet:** Enriquecimiento de modelo mediante DuckDuckGo API previo a la consulta en APIs de tiendas. |
+| 3 | **Scoring Ponderado por MPN:** Bonificación del 35% por coincidencia de modelo alfanumérico y penalización del 25% por discrepancia de modelo. |
+| 4 | **Sin Backend:** Todos los datos residen localmente en el navegador mediante IndexedDB. |
+| 5 | **Depuración de MercadoLibre:** Removido totalmente debido a captchas de listados públicos y solicitud del usuario. |
+| 6 | **Selectores Configurables:** Archivo `stores/selectors.json` independiente para mantener selectores CSS/JSON-LD por tienda. |
 
 ---
 
 ## 📍 Estado Actual del Proyecto
 
-**Fase actual:** ✅ COMPLETO — Todos los archivos creados, depurados y funcionales.  
-**Última actualización:** 2026-07-26  
-**Próximo paso:** Cargar en Chrome (`chrome://extensions`) y hacer pruebas manuales
-
-### Checklist de Fases
-- [x] Fase 1 — Fundación (manifest.json, selectors.json)
-- [x] Fase 2 — Content Scripts (falabella, alkosto, exito + utils.js)
-- [x] Fase 3 — Service Worker & IndexedDB (db.js, search.js, service-worker.js)
-- [x] Fase 4 — Popup UI (Chart.js, dark mode, 3 tabs: precios/historial/agregar)
-- [x] Fase 5 — Página de Opciones (perfiles CRUD, tabla de productos, config, export/import)
-- [x] Fase 6 — Iconos (16px, 48px, 128px) + Chart.js 4.4.4 local
-- [ ] Pruebas manuales en Chrome — navegar a producto Falabella
-- [ ] Pruebas manuales en Chrome — navegar a producto Alkosto
-- [ ] Pruebas manuales en Chrome — navegar a producto Éxito
-- [ ] Verificar búsqueda cross-store automática
-- [ ] Verificar gráfica de historial en popup
-- [ ] Pruebas en Firefox
-
----
-
-## 🐛 Problemas Conocidos / Consideraciones Técnicas
-
-- Los selectores DOM en `selectors.json` pueden necesitar actualización si las tiendas rediseñan fuertemente su frontend. Sin embargo, las etiquetas estructuradas (JSON-LD y OpenGraph) implementadas como rescate por RegEx suelen ser muy estables.
-- Si las tiendas detectan un alto volumen de consultas o actualizan sus reglas WAF, es posible que los requests `fetch()` silenciosos vuelvan a fallar. Para esto se debe mantener actualizado el `User-Agent` de `lib/search.js`.
-- Firefox MV3: verificar que `chrome.*` APIs funcionen con el polyfill `browser.*`.
-
----
-
-## 🚀 Cómo Cargar la Extensión para Pruebas
-
-**Chrome / Chromium:**
-1. Ir a `chrome://extensions`
-2. Activar "Modo desarrollador" (toggle superior derecho)
-3. Clic en "Cargar extensión sin empaquetar"
-4. Seleccionar la carpeta `CompareAllExtension/`
-
-**Firefox:**
-1. Ir a `about:debugging#/runtime/this-firefox`
-2. Clic en "Cargar complemento temporal"
-3. Seleccionar el archivo `manifest.json` dentro de `CompareAllExtension/`
+**Fase actual:** ✅ COMPLETO — Enriquecimiento por modelo activo, eliminación de MercadoLibre completada y motor cross-store optimizado.  
+**Última actualización:** 2026-08-17  
 
 ---
 
@@ -212,5 +186,3 @@ Las URLs de productos soportadas para MercadoLibre incluyen el formato `articulo
 | Archivo | Versión | Propósito |
 |---------|---------|-----------|
 | `lib/chart.min.js` | Chart.js 4.4.x | Gráficas de historial de precios |
-
-> **Nota:** No usar CDN. Todas las dependencias deben estar en el paquete de la extensión (requerimiento de CSP MV3).
